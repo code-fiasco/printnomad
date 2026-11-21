@@ -1,6 +1,6 @@
 // Options page: My printers, profile status, conversion options and a manual "Convert a file".
 import { CONFIG } from "../config.ts";
-import type { Issue } from "../engine/protocol.ts";
+import type { Failure } from "../engine/protocol.ts";
 import { localize, t, uiLanguage } from "../lib/i18n.ts";
 import { DEFAULT_OPTIONS, loadSettings, platformKey, saveSettings, type MyPrinter, type Settings } from "../lib/settings.ts";
 import { Converter, saveOutput, showInFolder } from "../lib/conversion.ts";
@@ -306,13 +306,13 @@ const EXAMPLE_COLOURS = [
 
 function exampleTarget(mode: string, slot: number): string {
   if (mode === "exact") return t("assign_example_exact", slot);
-  if (mode === "slicer") return t("assign_example_slicer", slot);
+  if (mode === "by_slicer") return t("assign_example_by_slicer", slot);
   return t("assign_example_compatible");
 }
 
 function assignLabel(mode: string): string {
   if (mode === "exact") return t("assign_exact");
-  if (mode === "slicer") return t("assign_slicer");
+  if (mode === "by_slicer") return t("assign_by_slicer");
   return t("assign_compatible");
 }
 
@@ -330,9 +330,9 @@ function renderPrefs() {
     const warning = WARNING_OF[key] && row.querySelector<HTMLElement>(`[data-warning="${WARNING_OF[key]}"]`);
     if (warning) warning.hidden = !on;
   }
-  const mode = String(optionValue("map_mode"));
-  for (const card of document.querySelectorAll<HTMLButtonElement>("[data-map-mode]")) {
-    const on = card.dataset.mapMode === mode;
+  const mode = String(optionValue("assignment_mode"));
+  for (const card of document.querySelectorAll<HTMLButtonElement>("[data-assignment-mode]")) {
+    const on = card.dataset.assignmentMode === mode;
     card.setAttribute("aria-checked", String(on));
     card.tabIndex = on ? 0 : -1;
   }
@@ -364,16 +364,16 @@ function wirePrefs() {
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-option]")) {
     button.onclick = () => void setOption(button.dataset.option!, optionValue(button.dataset.option!) !== true);
   }
-  const cards = [...document.querySelectorAll<HTMLButtonElement>("[data-map-mode]")];
+  const cards = [...document.querySelectorAll<HTMLButtonElement>("[data-assignment-mode]")];
   for (const [i, card] of cards.entries()) {
-    card.onclick = () => void setOption("map_mode", card.dataset.mapMode!);
+    card.onclick = () => void setOption("assignment_mode", card.dataset.assignmentMode!);
     // A radio group moves with the arrow keys.
     card.onkeydown = (e) => {
       const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
       if (!step) return;
       e.preventDefault();
       const next = cards[(i + step + cards.length) % cards.length];
-      void setOption("map_mode", next.dataset.mapMode!).then(() => next.focus());
+      void setOption("assignment_mode", next.dataset.assignmentMode!).then(() => next.focus());
     };
   }
 }
@@ -483,12 +483,12 @@ function resultRow(printer: MyPrinter, fileName: string) {
         : undefined,
     }));
   };
-  const showIssue = (issue: Pick<Issue, "code" | "message" | "suggestion"> | null) => {
-    reportCode = issue?.code;
-    field("issue").hidden = !issue;
-    if (!issue) return;
-    field("issue-message").textContent = `${issue.code} · ${issue.message}`;
-    field("issue-suggestion").textContent = issue.suggestion;
+  const showFailure = (failure: Pick<Failure, "code" | "message" | "suggestion"> | null) => {
+    reportCode = failure?.code;
+    field("failure").hidden = !failure;
+    if (!failure) return;
+    field("failure-message").textContent = `${failure.code} · ${failure.message}`;
+    field("failure-suggestion").textContent = failure.suggestion;
   };
   const count = (report: Record<string, unknown>, key: string) =>
     (Array.isArray(report[key]) ? (report[key] as unknown[]).length : 0);
@@ -512,25 +512,25 @@ function resultRow(printer: MyPrinter, fileName: string) {
     openDetails() {
       (field("details") as HTMLDetailsElement).open = true;
     },
-    issue: showIssue,
+    failure: showFailure,
     /** The engine itself failed: there is no report from the core, only this message. */
     engineFailed(message: string) {
-      const issue = { code: ENGINE_ERROR, message, suggestion: t("issue_engine_suggestion") };
-      showIssue(issue);
-      showReport(`✗ [${issue.code}] ${message}`);
+      const failure = { code: ENGINE_ERROR, message, suggestion: t("error_engine_suggestion") };
+      showFailure(failure);
+      showReport(`✗ [${failure.code}] ${message}`);
     },
   };
 }
 
 type ResultRow = ReturnType<typeof resultRow>;
 
-/** Next to the core's codes (issues.py): the engine did not start or stopped responding. */
+/** Next to the core's codes (error_codes.py): the engine did not start or stopped responding. */
 const ENGINE_ERROR = "PN902";
 
 async function convertFor(printer: MyPrinter, row: ResultRow, file: File, data: ArrayBuffer, platform: string,
   sourceBundles: string[]): Promise<boolean> {
   row.status("info", t("convert_busy"));
-  row.issue(null);
+  row.failure(null);
   try {
     const res = await converter.convert(printer, file.name, data, settings, platform, sourceBundles);
     row.report(res.alreadyTarget ? "" : res.text, res.report);
@@ -540,7 +540,7 @@ async function convertFor(printer: MyPrinter, row: ResultRow, file: File, data: 
     }
     if (!res.output) {
       row.status("error", t("convert_failed"));
-      row.issue((res.report?.issues as Issue[] | undefined)?.[0] ?? null);
+      row.failure((res.report?.failures as Failure[] | undefined)?.[0] ?? null);
       row.openDetails();
       return false;
     }

@@ -8,7 +8,7 @@
 // MakerWorld's class names are generated (mw-css-…): elements are found by structure
 // (span.primaryButton, .swiper-wrapper, MUI menus) and by "3MF" in menu texts.
 import { CONFIG } from "../config.ts";
-import type { Issue } from "../engine/protocol.ts";
+import type { Failure } from "../engine/protocol.ts";
 import { clipboardReport } from "../lib/report-copy.ts";
 import { reportPanel } from "../lib/report-panel.ts";
 import { normalize, planChips } from "./chips.ts";
@@ -24,7 +24,7 @@ const MENU_TIMEOUT_MS = 4_000;
 /** Where 3MF is already the button's action, the menu may not offer it: do not wait long for it. */
 const MENU_KNOWN_TIMEOUT_MS = 300;
 const RESULT_VISIBLE_MS = 5_000;
-/** Next to the core's codes (issues.py): MakerWorld's download could not be captured or fetched. */
+/** Next to the core's codes (error_codes.py): MakerWorld's download could not be captured or fetched. */
 const MAKERWORLD_ERROR = "PN903";
 const DIVIDER_GAP_PX = 10;
 
@@ -641,15 +641,15 @@ async function download() {
     console.warn("[PrintNomad]", e);
     // Most likely MakerWorld changed its page or the download failed: worth reporting.
     const message = e instanceof Error ? e.message : String(e);
-    const issue = { code: MAKERWORLD_ERROR, stage: "makerworld", message, suggestion: t("issue_makerworld_suggestion") };
-    setStatus(t("mw_status_error_code", issue.code), RESULT_VISIBLE_MS);
-    showError(issue, clipboardReport({
+    const failure = { code: MAKERWORLD_ERROR, stage: "makerworld", message, suggestion: t("error_makerworld_suggestion") };
+    setStatus(t("mw_status_error_code", failure.code), RESULT_VISIBLE_MS);
+    showError(failure, clipboardReport({
       version: CONFIG.version,
       printer: printer.label,
       slicer: printer.slicer,
       file: location.pathname,
       browser: navigator.userAgent,
-    }, `✗ [${issue.code}] ${message}`));
+    }, `✗ [${failure.code}] ${message}`));
   } finally {
     busy = false;
   }
@@ -668,11 +668,11 @@ function showOutcome(outcome: ConvertOutcome) {
     return;
   }
   // The status replaces the button's label: an error shows its code, and the details in a panel.
-  const code = outcome.status === "error" ? outcome.issue?.code : undefined;
+  const code = outcome.status === "error" ? outcome.failure?.code : undefined;
   setStatus(code ? t("mw_status_error_code", code) : outcomeText(outcome), RESULT_VISIBLE_MS);
   if (outcome.status === "error") {
     console.warn("[PrintNomad]", outcome.message);
-    showError(outcome.issue, outcome.report ?? outcome.message);
+    showError(outcome.failure, outcome.report ?? outcome.message);
   }
 }
 
@@ -705,7 +705,7 @@ function openModal(onClose: () => void) {
 }
 
 /** Why it failed and what to do, with the report to copy or send. */
-function showError(issue: Pick<Issue, "code" | "message" | "suggestion"> | undefined, report: string) {
+function showError(failure: Pick<Failure, "code" | "message" | "suggestion"> | undefined, report: string) {
   const { panel, close } = openModal(() => {});
   const card = document.createElement("div");
   card.className = "card flex flex-col gap-3 p-5";
@@ -713,19 +713,19 @@ function showError(issue: Pick<Issue, "code" | "message" | "suggestion"> | undef
   title.className = "font-display text-xl font-extrabold";
   title.textContent = t("mw_error_title");
   card.append(title);
-  if (issue) {
+  if (failure) {
     const box = document.createElement("div");
     box.className = "flex flex-col gap-1 rounded-xl bg-err-soft p-3 text-sm";
     const message = document.createElement("span");
     message.className = "font-semibold text-err";
-    message.textContent = `${issue.code} · ${issue.message}`;
+    message.textContent = `${failure.code} · ${failure.message}`;
     const suggestion = document.createElement("span");
-    suggestion.textContent = issue.suggestion;
+    suggestion.textContent = failure.suggestion;
     box.append(message, suggestion);
     card.append(box);
   }
   const send = CONFIG.reportUrl
-    ? (extra: { comment: string; contact: string }) => bridge.call<void>({ type: "send-report", report, ...extra, code: issue?.code })
+    ? (extra: { comment: string; contact: string }) => bridge.call<void>({ type: "send-report", report, ...extra, code: failure?.code })
     : undefined;
   const closeButton = document.createElement("button");
   closeButton.type = "button";

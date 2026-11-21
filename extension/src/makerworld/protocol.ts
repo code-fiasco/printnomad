@@ -1,4 +1,4 @@
-import type { Issue } from "../engine/protocol.ts";
+import type { Failure } from "../engine/protocol.ts";
 
 // Messages between the MakerWorld content script, the page script (main world) and the
 // bridge page (engine iframe). Every message carries `source` so unrelated postMessage
@@ -43,7 +43,7 @@ export type ConvertOutcome =
   | { status: "saved"; fileName: string; warnings: number; convertMs: number; checkColours: boolean }
   | { status: "cancelled" }
   | { status: "already" }
-  | { status: "error"; message: string; issue?: Issue; report?: string };
+  | { status: "error"; message: string; failure?: Failure; report?: string };
 
 export type BridgeMessage =
   | { source: typeof BRIDGE; type: "ready" }

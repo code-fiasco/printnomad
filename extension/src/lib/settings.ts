@@ -22,7 +22,7 @@ export interface Settings {
 
 /** The core's defaults (core/src/printnomad/options.py); a test keeps them in step. */
 export const DEFAULT_OPTIONS: Record<string, boolean | string> = {
-  map_mode: "compatible",
+  assignment_mode: "compatible",
   keep_designer_filament: true,
   keep_designer_cooling: false,
   keep_designer_printer_settings: false,
@@ -37,19 +37,22 @@ const DEFAULTS: Settings = { printers: [], options: {} };
  * - `generalSlicerForAll` is gone: the slicer is chosen per printer, and each printer already
  *   stores the one that switch gave it.
  * - `defaultPrinterId` is gone: on MakerWorld the printer is chosen on the page.
+ * - The option `map_mode` is now `assignment_mode`, and its value `slicer` is now `by_slicer`.
  */
 export function migrateSettings(stored: Record<string, unknown>): { set: Partial<Settings>; remove: string[] } {
   const remove = ["advanced", "generalSlicerForAll", "defaultPrinterId"].filter((key) => key in stored);
-  return { set: "advanced" in stored && stored.advanced !== true ? { options: {} } : {}, remove };
+  if ("advanced" in stored && stored.advanced !== true) return { set: { options: {} }, remove };
+  const options = stored.options as Settings["options"] | undefined;
+  if (!options || !("map_mode" in options)) return { set: {}, remove };
+  const { map_mode: mode, ...rest } = options;
+  return { set: { options: { ...rest, assignment_mode: mode === "slicer" ? "by_slicer" : mode } }, remove };
 }
 
 export async function loadSettings(): Promise<Settings> {
   const stored = await chrome.storage.sync.get(null);
   const { set, remove } = migrateSettings(stored);
-  if (remove.length) {
-    await chrome.storage.sync.set(set);
-    await chrome.storage.sync.remove(remove);
-  }
+  if (Object.keys(set).length) await chrome.storage.sync.set(set);
+  if (remove.length) await chrome.storage.sync.remove(remove);
   for (const key of remove) delete stored[key];
   return { ...DEFAULTS, ...stored, ...set } as Settings;
 }

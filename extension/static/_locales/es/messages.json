@@ -89,10 +89,10 @@
   "mw_error_title": {
     "message": "No se pudo convertir este modelo"
   },
-  "issue_makerworld_suggestion": {
+  "error_makerworld_suggestion": {
     "message": "Intenta la descarga de nuevo. Si sigue fallando, puede que MakerWorld haya cambiado: envía este reporte."
   },
-  "issue_engine_suggestion": {
+  "error_engine_suggestion": {
     "message": "Recarga esta página e inténtalo de nuevo. Si vuelve a fallar, envía este reporte."
   },
   "convert_no_printers": {
@@ -368,13 +368,13 @@
   "assign_exact_when": {
     "message": "tus bobinas estén en el mismo orden que el plan del diseñador."
   },
-  "assign_slicer": {
+  "assign_by_slicer": {
     "message": "Según el laminador"
   },
-  "assign_slicer_desc": {
+  "assign_by_slicer_desc": {
     "message": "Exacta si tu laminador la acepta, Compatible si no. Se decide en cada descarga."
   },
-  "assign_slicer_when": {
+  "assign_by_slicer_when": {
     "message": "quieras Exacta pero cambies de laminador."
   },
   "assign_example_title": {
@@ -388,7 +388,7 @@
     "message": "Ranura $1",
     "description": "$1 = value"
   },
-  "assign_example_slicer": {
+  "assign_example_by_slicer": {
     "message": "Ranura $1 si tu laminador lo permite",
     "description": "$1 = value"
   },

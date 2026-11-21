@@ -87,7 +87,7 @@ def review(project: Project3MF, target: Target) -> tuple[Report, dict[str, bytes
             old = current[i] if i < len(current) else None
             if old != masks[i]:
                 report.changed.append(FieldChange(t("report.filament_key", key="filament_printable", index=i + 1),
-                                                  old, masks[i], t("reason.filament_printable_repaired",
+                                                  old, masks[i], t("reason.filament_printable_reviewed",
                                                                    allowed=extruders_text(masks[i]))))
     try:
         root = project.model_settings()
@@ -98,6 +98,6 @@ def review(project: Project3MF, target: Target) -> tuple[Report, dict[str, bytes
     report.warnings.extend(conflict_warnings(printable_conflicts(masks, plates, usage), masks, types))
     if not report.changed:
         return report, {}
-    report.notes.append(t("report.repaired"))
+    report.notes.append(t("report.reviewed"))
     files = {PROJECT_SETTINGS: (json.dumps(out, indent=4, ensure_ascii=False) + "\n").encode("utf-8")}
     return report, files

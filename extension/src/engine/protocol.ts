@@ -12,7 +12,7 @@ export interface ConvertRequest {
   nozzle?: string;
   /** Build plate chosen for this printer; missing: the printer's default. */
   bedType?: string;
-  /** Advanced options (core/src/printnomad/options.py); missing ones take their defaults. */
+  /** Conversion options (core/src/printnomad/options.py); missing ones take their defaults. */
   options?: OptionValues;
   /** Profiles of the slicer the project was made with (see SourceInfo): original values in the report. */
   sourceBundles?: string[];
@@ -21,8 +21,8 @@ export interface ConvertRequest {
 
 export type OptionValues = Record<string, boolean | string>;
 
-/** An error with its code (core/src/printnomad/issues.py). */
-export interface Issue {
+/** An error with its code (core/src/printnomad/error_codes.py). */
+export interface Failure {
   code: string;
   stage: string;
   message: string;
@@ -33,7 +33,7 @@ export interface ConvertResult {
   ok: boolean;
   /** The project is already set up for this printer: nothing to convert. */
   alreadyTarget: boolean;
-  /** Report as produced by printnomad.report.Report.to_dict() (`issues`: see Issue), or null. */
+  /** Report as produced by printnomad.report.Report.to_dict() (`failures`: see Failure), or null. */
   report: Record<string, unknown> | null;
   /** Human-readable report in `lang`. */
   text: string;

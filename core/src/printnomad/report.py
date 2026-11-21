@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, field
 
-from . import issues
+from . import error_codes
 from .i18n import t
 
 
@@ -47,8 +47,8 @@ class FilamentMapping:
 
 
 @dataclass
-class Issue:
-    """An error with its code (issues.py), the stage that failed and what the user can do."""
+class Failure:
+    """An error with its code (error_codes.py), the stage that failed and what the user can do."""
 
     code: str
     stage: str
@@ -88,10 +88,10 @@ class Report:
     notes: list[str] = field(default_factory=list)  # informativo: no requiere acción
     errors: list[str] = field(default_factory=list)
     # The errors added with fail(), with code, stage and suggestion.
-    issues: list[Issue] = field(default_factory=list)
+    failures: list[Failure] = field(default_factory=list)
     # Plates with more colours than extruders (kept; the slicer resolves them).
     over_extruders: list[str] = field(default_factory=list)
-    # The project was already set up for the target: only reviewed (repair.py).
+    # The project was already set up for the target: only reviewed (review.py).
     already_target: bool = False
 
     @property
@@ -101,7 +101,7 @@ class Report:
     def fail(self, code: str, message: str) -> None:
         """Record an error: `message` says what happened, the catalog what to do about it."""
         self.errors.append(message)
-        self.issues.append(Issue(code, issues.STAGES[code], message, t(f"issue.{code}.suggestion")))
+        self.failures.append(Failure(code, error_codes.STAGES[code], message, t(f"error.{code}.suggestion")))
 
     def change(self, key, original, final, reason):
         self.changed.append(FieldChange(key, original, final, reason))
@@ -173,12 +173,12 @@ class Report:
             lines += [f"  ! {w}" for w in self.warnings]
         if self.errors:
             lines.append(t("report.errors", count=len(self.errors)))
-            known = {i.message: i for i in self.issues}
+            known = {f.message: f for f in self.failures}
             for e in self.errors:
-                issue = known.get(e)
-                if issue:
-                    lines.append(f"  ✗ [{issue.code} · {t('stage.' + issue.stage)}] {e}")
-                    lines.append(f"    → {issue.suggestion}")
+                failure = known.get(e)
+                if failure:
+                    lines.append(f"  ✗ [{failure.code} · {t('stage.' + failure.stage)}] {e}")
+                    lines.append(f"    → {failure.suggestion}")
                 else:
                     lines.append(f"  ✗ {e}")
         return "\n".join(lines)

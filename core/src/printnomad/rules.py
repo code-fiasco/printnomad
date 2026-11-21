@@ -26,12 +26,12 @@ BAMBU_ONLY_KEYS = frozenset({
 
 
 # Modos de asignación de filamentos a extrusores en project_settings (filament_map_mode).
-# How PrintNomad chooses the slicer's assignment mode (option `map_mode`):
+# How PrintNomad chooses the slicer's assignment mode (option `assignment_mode`):
 # compatible = automatic in the slicer (opens and slices in every Orca-based slicer),
-# exact = manual (the planned assignment is enforced), slicer = manual unless the
+# exact = manual (the planned assignment is enforced), by_slicer = manual unless the
 # target slicer rejects it (data/slicers.json quirk manual_map_max_extruder).
-MAP_COMPATIBLE, MAP_EXACT, MAP_BY_SLICER = "compatible", "exact", "slicer"
-MAP_MODES = (MAP_COMPATIBLE, MAP_EXACT, MAP_BY_SLICER)
+ASSIGNMENT_COMPATIBLE, ASSIGNMENT_EXACT, ASSIGNMENT_BY_SLICER = "compatible", "exact", "by_slicer"
+ASSIGNMENT_MODES = (ASSIGNMENT_COMPATIBLE, ASSIGNMENT_EXACT, ASSIGNMENT_BY_SLICER)
 MAP_MODE_MANUAL = "Manual"
 MAP_MODE_AUTO = "Auto For Flush"
 

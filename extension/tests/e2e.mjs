@@ -175,7 +175,7 @@ try {
     writeFileSync(damaged, "not a zip");
     await (await page.$("#convert-file")).uploadFile(damaged);
     await page.click("#convert-button");
-    await page.waitForFunction(() => /PN102/.test(document.querySelector('#convert-results [data-field="issue-message"]')?.textContent ?? ""),
+    await page.waitForFunction(() => /PN102/.test(document.querySelector('#convert-results [data-field="failure-message"]')?.textContent ?? ""),
       { timeout: 120_000 });
     await browser.defaultBrowserContext().overridePermissions(`chrome-extension://${id}`, ["clipboard-read", "clipboard-write", "clipboard-sanitized-write"]);
     await page.bringToFront();

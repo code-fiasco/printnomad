@@ -1,0 +1,3 @@
+# No per-printer exceptions
+
+The conversion applies the same rules to every printer: the printer maker's profile is the reference for printer settings, and the user decides, through the conversion options, when the designer's values should win. We do not keep exceptions for particular machines (e.g. "turn the purge tower on for tool changers"), because each one would need someone to verify it on that printer and would silently go stale as profiles change. Slicer behaviour that differs (such as the highest extruder a manual assignment may use) lives in the slicer registry, not in per-printer code.
