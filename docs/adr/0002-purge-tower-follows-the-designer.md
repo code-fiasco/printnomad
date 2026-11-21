@@ -1,0 +1,3 @@
+# The purge tower follows the designer
+
+Decided 2026-10-30. The purge tower is not a printer setting: whether a design's colour changes need one is the designer's call, so a designer change to it is kept, and when the designer did not change it the target's profile decides like any other setting. This is surprising next to accelerations, calibration and cooling, which always come from the target, and it means a model made for a Bambu printer (which purges through a chute) may arrive with the tower off on a tool changer; the user can turn it back on in the slicer. Other converters make the same choice.

@@ -10,7 +10,7 @@ intended **on your printer**, and every change is written in the conversion repo
 | **The model** | supports, infill, walls, layer height, seam, ironing, fuzzy skin, speeds, purge tower — whatever the designer changed | the project |
 | **Slicer factory defaults** | everything else (hundreds of settings) | your slicer's own defaults |
 
-## The model's values, and only those
+## The designer's changes, and only those
 
 A Bambu project stores *every* setting of its presets, but it also records which ones
 the designer changed (`different_settings_to_system`). PrintNomad keeps exactly those.
@@ -42,7 +42,7 @@ change with the original value of the preset the designer started from:
 bridge_speed: 50 → 10 (target profile: 35)
 ```
 
-*original preset value → the model's value (what your printer's profile would use)*.
+*original preset value → the designer's value (what your printer's profile would use)*.
 
 Settings a project marks as changed although they still have the original value
 (it happens with MakerWorld "Shared" profiles) are not treated as the designer's
@@ -50,7 +50,7 @@ choice; your printer's value applies.
 
 ## Printer settings come from your printer
 
-Some process settings describe the machine, not the model, and are taken from your
+Some process settings describe the machine, not the print, and are taken from your
 printer's profile even when the designer changed them:
 
 - **Accelerations** — the machine's kinematics.
@@ -59,21 +59,21 @@ printer's profile even when the designer changed them:
 - **Cooling** — fan percentages refer to each printer's own fans, which differ in power,
   number and numbering.
 
-The **purge tower** stays the model's: whether the colour changes of a design need it is
+The **purge tower** stays the designer's: whether the colour changes of a design need it is
 the designer's call. If the designer did not change it, your printer's profile decides.
 Keep in mind that a model made for a Bambu printer (which purges through a chute) may
 turn it off; on a tool changer such as the Flashforge Creator 5 Pro (idle heads cooled by
 100 °C) you can turn it back on in the slicer if the first lines after a head change
 come out thin.
 
-Speeds stay the model's: your slicer caps every move at the filament's maximum
+Speeds stay the designer's: your slicer caps every move at the filament's maximum
 volumetric speed when slicing, so a faster filament still benefits.
 
 The same rule applies to every printer: PrintNomad does not keep per-printer
 exceptions, which would need someone to verify each machine. The printer maker's profile
-is the reference, and you decide when the model's values should win.
+is the reference, and you decide when the designer's changes should win.
 
-The conversion preferences can keep the model's cooling or printer settings anyway; each option
+The conversion preferences can keep the designer's cooling or printer settings anyway; each option
 explains its risk.
 
 ## Filament settings
@@ -141,7 +141,7 @@ with more colours than extruders stays automatic unless you assign it by hand.
 ## The right slicer for each printer
 
 A converted project is self-contained and prints the same wherever it is opened, but it
-is only *exact* for the slicer whose profiles it was converted with: same profile version,
+only *matches* the slicer whose profiles it was converted with: same profile version,
 preset names that slicer knows, and no false "modified" values when the printer is
 selected again. Compared on a Creator 5 Pro, Flash Studio 1.7.20 and OrcaSlicer 2.4.2
 differ in 27 of 142 machine settings (end G-code included).
