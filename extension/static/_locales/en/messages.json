@@ -94,10 +94,10 @@
   "mw_error_title": {
     "message": "This model could not be converted"
   },
-  "issue_makerworld_suggestion": {
+  "error_makerworld_suggestion": {
     "message": "Try the download again. If it keeps failing, MakerWorld may have changed: please send this report."
   },
-  "issue_engine_suggestion": {
+  "error_engine_suggestion": {
     "message": "Reload this page and try again. If it fails again, send this report."
   },
   "convert_no_printers": {
@@ -378,13 +378,13 @@
   "assign_exact_when": {
     "message": "your spools are loaded in the same order as the designer's plan."
   },
-  "assign_slicer": {
+  "assign_by_slicer": {
     "message": "Depends on the slicer"
   },
-  "assign_slicer_desc": {
+  "assign_by_slicer_desc": {
     "message": "Exact when your slicer accepts it, Compatible when it doesn't. Decided for you on each download."
   },
-  "assign_slicer_when": {
+  "assign_by_slicer_when": {
     "message": "you want Exact but switch between slicers."
   },
   "assign_example_title": {
@@ -398,7 +398,7 @@
     "message": "Slot $1",
     "description": "$1 = value"
   },
-  "assign_example_slicer": {
+  "assign_example_by_slicer": {
     "message": "Slot $1 if your slicer allows",
     "description": "$1 = value"
   },

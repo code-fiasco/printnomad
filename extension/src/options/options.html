@@ -283,20 +283,20 @@
             <p class="m-0 text-[15px] leading-[1.55] text-muted" data-i18n="assign_intro"></p>
           </div>
           <div role="radiogroup" aria-labelledby="assign-title" class="grid gap-3 md:grid-cols-3">
-            <button type="button" role="radio" data-map-mode="compatible" class="radio-card">
+            <button type="button" role="radio" data-assignment-mode="compatible" class="radio-card">
                 <span class="flex flex-wrap items-center gap-2.5"><span class="radio-dot"></span><span class="font-bold" data-i18n="assign_compatible"></span><span class="rounded-full bg-accent-soft px-2 py-[3px] text-xs font-bold text-accent-strong" data-i18n="pref_recommended"></span></span>
                 <span class="text-sm leading-normal text-fg-2" data-i18n="assign_compatible_desc"></span>
                 <span class="text-[13px] leading-normal text-muted"><strong class="text-fg" data-i18n="assign_pick_when"></strong> <span data-i18n="assign_compatible_when"></span></span>
               </button>
-            <button type="button" role="radio" data-map-mode="exact" class="radio-card">
+            <button type="button" role="radio" data-assignment-mode="exact" class="radio-card">
                 <span class="flex flex-wrap items-center gap-2.5"><span class="radio-dot"></span><span class="font-bold" data-i18n="assign_exact"></span></span>
                 <span class="text-sm leading-normal text-fg-2" data-i18n="assign_exact_desc"></span>
                 <span class="text-[13px] leading-normal text-muted"><strong class="text-fg" data-i18n="assign_pick_when"></strong> <span data-i18n="assign_exact_when"></span></span>
               </button>
-            <button type="button" role="radio" data-map-mode="slicer" class="radio-card">
-                <span class="flex flex-wrap items-center gap-2.5"><span class="radio-dot"></span><span class="font-bold" data-i18n="assign_slicer"></span></span>
-                <span class="text-sm leading-normal text-fg-2" data-i18n="assign_slicer_desc"></span>
-                <span class="text-[13px] leading-normal text-muted"><strong class="text-fg" data-i18n="assign_pick_when"></strong> <span data-i18n="assign_slicer_when"></span></span>
+            <button type="button" role="radio" data-assignment-mode="by_slicer" class="radio-card">
+                <span class="flex flex-wrap items-center gap-2.5"><span class="radio-dot"></span><span class="font-bold" data-i18n="assign_by_slicer"></span></span>
+                <span class="text-sm leading-normal text-fg-2" data-i18n="assign_by_slicer_desc"></span>
+                <span class="text-[13px] leading-normal text-muted"><strong class="text-fg" data-i18n="assign_pick_when"></strong> <span data-i18n="assign_by_slicer_when"></span></span>
               </button>
           </div>
           <div class="flex flex-col gap-3 rounded-[14px] bg-bg px-[18px] py-4">
@@ -383,9 +383,9 @@
           </span>
           <button data-field="show" type="button" class="btn shrink-0 rounded-full bg-sunken px-4 py-1.5 text-xs hover:bg-line" data-i18n="convert_show" hidden></button>
         </div>
-        <div data-field="issue" class="flex flex-col gap-1 rounded-xl bg-err-soft p-3 text-sm" hidden>
-          <span data-field="issue-message" class="font-semibold text-err"></span>
-          <span data-field="issue-suggestion"></span>
+        <div data-field="failure" class="flex flex-col gap-1 rounded-xl bg-err-soft p-3 text-sm" hidden>
+          <span data-field="failure-message" class="font-semibold text-err"></span>
+          <span data-field="failure-suggestion"></span>
         </div>
         <details data-field="details" class="border-t border-line pt-2" hidden>
           <summary class="cursor-pointer py-1 text-xs font-semibold text-muted" data-i18n="convert_report"></summary>

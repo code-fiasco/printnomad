@@ -11,7 +11,7 @@ import math
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-from . import issues, model_edit, renumber, repair, rules
+from . import error_codes, model_edit, renumber, review, rules
 from .i18n import t
 from .profiles import ProfileError, ProfileLibrary
 from .read_3mf import (
@@ -144,7 +144,7 @@ def convert(
     keep_designer_filament: bool = True,
     keep_designer_cooling: bool = False,
     keep_designer_printer_settings: bool = False,
-    map_mode: str = rules.MAP_COMPATIBLE,
+    assignment_mode: str = rules.ASSIGNMENT_COMPATIBLE,
     source_lib: ProfileLibrary | None = None,
     bed_type: str | None = None,
 ) -> ConversionResult:
@@ -157,7 +157,7 @@ def convert(
     shows the designer's own numbering.
     """
     options = {"keep_designer_filament": keep_designer_filament, "keep_designer_cooling": keep_designer_cooling,
-               "keep_designer_printer_settings": keep_designer_printer_settings, "map_mode": map_mode,
+               "keep_designer_printer_settings": keep_designer_printer_settings, "assignment_mode": assignment_mode,
                "source_lib": source_lib, "bed_type": bed_type}
     settings = project.project_settings
     if settings and detect_source(project) not in (SOURCE_PRUSA, SOURCE_UNKNOWN) and target.is_same_printer(settings):
@@ -189,12 +189,12 @@ def convert(
 
 def _review(project: Project3MF, target: Target) -> ConversionResult:
     """A project already set up for `target`: nothing to convert, but values that would
-    stop it slicing are fixed (repair.py). Without fixes, the report says so (an error,
+    stop it slicing are fixed (review.py). Without fixes, the report says so (an error,
     as before: there is nothing to write)."""
-    report, files = repair.review(project, target)
+    report, files = review.review(project, target)
     report.already_target = True
     if not files:
-        report.fail(issues.ALREADY_TARGET, t("convert.error.already_target", target=target.display_name))
+        report.fail(error_codes.ALREADY_TARGET, t("convert.error.already_target", target=target.display_name))
     return ConversionResult(report=report, files=files)
 
 
@@ -217,7 +217,7 @@ def _convert(
     keep_designer_filament: bool = True,
     keep_designer_cooling: bool = False,
     keep_designer_printer_settings: bool = False,
-    map_mode: str = rules.MAP_COMPATIBLE,
+    assignment_mode: str = rules.ASSIGNMENT_COMPATIBLE,
     source_lib: ProfileLibrary | None = None,
     known_usage: dict[str, set[int]] | None = None,
     bed_type: str | None = None,
@@ -233,14 +233,14 @@ def _convert(
     cambian de una impresora a otra.
     `keep_designer_printer_settings`: conservar también los ajustes de proceso que dependen
     de la impresora (torre de purga, aceleraciones, calibración; ver rules.PRINTER_PROCESS_KEY).
-    `map_mode`: rules.MAP_COMPATIBLE | MAP_EXACT | MAP_BY_SLICER (ver options.py).
+    `assignment_mode`: rules.ASSIGNMENT_COMPATIBLE | ASSIGNMENT_EXACT | ASSIGNMENT_BY_SLICER (ver options.py).
     `source_lib`: perfiles del laminador de origen (p. ej. Bambu Studio). Con ellos el
     reporte muestra el valor original de cada cambio del diseñador, y los "cambios" que
     en realidad tienen el valor original se tratan como no cambiados.
     `bed_type`: placa elegida entre `target.bed_types`; por defecto, la de la impresora.
     """
-    if map_mode not in rules.MAP_MODES:
-        raise ValueError(f"map_mode must be one of {rules.MAP_MODES}, not {map_mode!r}")
+    if assignment_mode not in rules.ASSIGNMENT_MODES:
+        raise ValueError(f"assignment_mode must be one of {rules.ASSIGNMENT_MODES}, not {assignment_mode!r}")
 
     def keep_process_key(k: str) -> bool:
         if rules.is_cooling_key(k):
@@ -257,13 +257,13 @@ def _convert(
     kind = detect_source(project)
     report.source_kind = kind
     if kind == SOURCE_UNKNOWN:
-        report.fail(issues.UNKNOWN_SOURCE, t("convert.error.unknown_source"))
+        report.fail(error_codes.UNKNOWN_SOURCE, t("convert.error.unknown_source"))
         return result
 
     src = _prusa_settings(project) if kind == SOURCE_PRUSA else copy.deepcopy(project.project_settings)
     out = copy.deepcopy(src)
     if target.is_same_printer(src):
-        report.fail(issues.ALREADY_TARGET, t("convert.error.already_target", target=target.display_name))
+        report.fail(error_codes.ALREADY_TARGET, t("convert.error.already_target", target=target.display_name))
         return result
 
     # --- Impresora -------------------------------------------------------
@@ -273,7 +273,7 @@ def _convert(
     try:
         target = target.with_nozzle(wanted)
     except ProfileError as e:
-        report.fail(issues.NOZZLE_UNAVAILABLE, str(e))
+        report.fail(error_codes.NOZZLE_UNAVAILABLE, str(e))
         return result
     if target.nozzle != src_nozzle:
         report.warnings.append(t("convert.warn.nozzle_changed", source=src_nozzle, target=target.nozzle))
@@ -310,7 +310,7 @@ def _convert(
         process_cfg = lib.settings("process", process)
         report.presets["process"] = process
     except ProfileError as e:
-        report.fail(issues.NO_PROCESS, str(e))
+        report.fail(error_codes.NO_PROCESS, str(e))
         return result
     for k, v in process_cfg.items():
         if k in author_process and k in src and keep_process_key(k):
@@ -361,7 +361,7 @@ def _convert(
     report.over_extruders = assignment.over_plates
     if assignment.errors:
         for error in assignment.errors:
-            report.fail(issues.BAD_MAP, error)
+            report.fail(error_codes.BAD_MAP, error)
         for i in range(n):
             report.filaments.append(FilamentMapping(
                 i + 1, fids[i], ftypes[i], colours[i], target.pick_filament(ftypes[i], fids[i])))
@@ -381,7 +381,7 @@ def _convert(
             msg = t("convert.warn.filament_no_equivalent", index=i + 1, profile=fids[i], type=ftypes[i],
                     target=target.display_name)
             if i + 1 in used_anywhere:
-                report.fail(issues.NO_FILAMENT, msg)
+                report.fail(error_codes.NO_FILAMENT, msg)
             else:
                 report.warnings.append(t("convert.warn.filament_unused", message=msg))
     if report.errors:
@@ -437,14 +437,14 @@ def _convert(
     # (OrcaSlicer 2.5: E1–E2); se lee del registro de laminadores (quirk).
     manual_limit = target.manual_map_max_extruder
     over_limit = manual_limit is not None and highest > manual_limit
-    slicer_map_mode = _slicer_map_mode(map_mode, user_map, over_limit, target.extruders, report,
+    slicer_map_mode = _slicer_map_mode(assignment_mode, user_map, over_limit, target.extruders, report,
                                        bool(assignment.over_plates))
     put("filament_map_mode", slicer_map_mode, t("reason.filament_map_mode"))
     masks = [target.filament_printable_of(p) for p in fprofiles]
     put("filament_printable", masks, t("reason.filament_printable", count=target.extruders))
     plate_maps = {p: (slicer_map_mode, m) for p, m in assignment.per_plate.items()}
-    conflicts = repair.printable_conflicts(masks, plate_maps, usage)
-    report.warnings.extend(repair.conflict_warnings(conflicts, masks, ftypes))
+    conflicts = review.printable_conflicts(masks, plate_maps, usage)
+    report.warnings.extend(review.conflict_warnings(conflicts, masks, ftypes))
     ext_colours = list(machine_cfg.get("extruder_colour") or [])
     ext_colours += ["#FFFFFF"] * (target.extruders - len(ext_colours))
     for i in reversed(range(n)):
@@ -726,30 +726,32 @@ def _warn_bed_temperatures(out: dict, types: list[str], used: set[int], report: 
         report.warnings.append(t("convert.warn.bed_refuses_filament", bed=bed, filaments=", ".join(refused)))
 
 
-def _slicer_map_mode(map_mode: str, user_map, over_limit: bool, extruders: int, report: Report,
+def _slicer_map_mode(assignment_mode: str, user_map, over_limit: bool, extruders: int, report: Report,
                      over_plates: bool = False) -> str:
-    """Slicer's `filament_map_mode` for the `map_mode` option.
+    """Slicer's `filament_map_mode` for the `assignment_mode` option.
 
     An assignment the user chose by hand (`user_map`) is always enforced (manual).
-    Otherwise: compatible → automatic; exact → manual; slicer → manual unless the
+    Otherwise: compatible → automatic; exact → manual; by_slicer → manual unless the
     target slicer rejects manual mode on the extruders in use.
     A plate with more colours than extruders stays automatic whatever the option: only the
     slicer can resolve it, and OrcaSlicer refuses such a plate in manual mode.
     """
     if over_plates and user_map is None:
         return rules.MAP_MODE_AUTO
-    if user_map is not None or map_mode == rules.MAP_EXACT or (map_mode == rules.MAP_BY_SLICER and not over_limit):
+    manual = assignment_mode == rules.ASSIGNMENT_EXACT or (
+        assignment_mode == rules.ASSIGNMENT_BY_SLICER and not over_limit)
+    if user_map is not None or manual:
         if over_limit:
             report.warnings.append(t("convert.warn.map_manual_e34"))
         return rules.MAP_MODE_MANUAL
-    if map_mode == rules.MAP_BY_SLICER:
+    if assignment_mode == rules.ASSIGNMENT_BY_SLICER:
         report.warnings.append(t("convert.warn.map_auto_e34"))
     elif extruders > 1:
         report.notes.append(t("convert.note.map_compatible"))
     return rules.MAP_MODE_AUTO
 
 
-def _edit_model_settings(root, info, per_plate, map_mode, target, limits, report: Report) -> None:
+def _edit_model_settings(root, info, per_plate, slicer_mode, target, limits, report: Report) -> None:
     for obj in root.findall("object"):
         oname = info.object_names.get(obj.get("id", ""), obj.get("id", ""))
         targets = [(None, obj)] + [(model_edit.meta(p).get("name", t("report.part", id=p.get("id"))), p)
@@ -786,10 +788,10 @@ def _edit_model_settings(root, info, per_plate, map_mode, target, limits, report
         if old != new_maps:
             report.plates.append(FieldChange(t("report.plate_key", plate=pid, key="filament_maps"), old, new_maps,
                                              t("reason.target_extruders")))
-        old = model_edit.set_meta(plate, "filament_map_mode", map_mode)
-        if old != map_mode:
-            report.plates.append(FieldChange(t("report.plate_key", plate=pid, key="filament_map_mode"), old, map_mode,
-                                             t("reason.map_mode")))
+        old = model_edit.set_meta(plate, "filament_map_mode", slicer_mode)
+        if old != slicer_mode:
+            report.plates.append(FieldChange(t("report.plate_key", plate=pid, key="filament_map_mode"), old,
+                                             slicer_mode, t("reason.map_mode")))
         # Without its own plate type a plate follows the project's: changing it in the slicer
         # updates them all (PartPlate::get_bed_type). The file's key is bed_type (bbs_3mf.cpp).
         old = model_edit.del_meta(plate, "bed_type")

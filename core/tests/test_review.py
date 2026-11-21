@@ -90,12 +90,12 @@ def test_conversion_keeps_maker_restriction_and_warns(tmp_path, target):
     assert any("#3" in w and "E3" in w for w in result.report.warnings)
 
 
-def test_output_name_of_a_repaired_project():
+def test_output_name_of_a_reviewed_project():
     assert write_3mf.output_path(Path("a/x_CREATOR5_PRO.3mf"), "_CREATOR5_PRO").name == "x_CREATOR5_PRO_fixed.3mf"
     assert write_3mf.output_path(Path("a/x.3mf"), "_CREATOR5_PRO").name == "x_CREATOR5_PRO.3mf"
 
 
-def test_web_writes_the_repaired_project(tmp_path, profiles_root):
+def test_web_writes_the_reviewed_project(tmp_path, profiles_root):
     src = saved_project(tmp_path, [KINGROON] * 4, ["3"] * 4)
     out = tmp_path / "out"
     out.mkdir()

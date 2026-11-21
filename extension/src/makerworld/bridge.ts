@@ -4,7 +4,7 @@
 // origin) nor use chrome.downloads; this extension page can. It only talks to the
 // MakerWorld origins listed in config.json, and only to the page that embeds it.
 import { CONFIG } from "../config.ts";
-import type { Issue } from "../engine/protocol.ts";
+import type { Failure } from "../engine/protocol.ts";
 import { Converter, saveOutput } from "../lib/conversion.ts";
 import { clipboardReport } from "../lib/report-copy.ts";
 import { sendReport } from "../lib/report-send.ts";
@@ -48,7 +48,7 @@ async function convert(printerId: string, name: string, data: ArrayBuffer): Prom
   const res = await converter.convert(printer, name, data, settings, platform, sourceBundles);
   if (res.alreadyTarget) return { status: "already" };
   if (!res.output) {
-    const issue = (res.report?.issues as Issue[] | undefined)?.[0];
+    const failure = (res.report?.failures as Failure[] | undefined)?.[0];
     const report = clipboardReport({
       version: CONFIG.version,
       printer: printer.printer,
@@ -57,7 +57,7 @@ async function convert(printerId: string, name: string, data: ArrayBuffer): Prom
       file: name,
       browser: navigator.userAgent,
     }, res.text);
-    return { status: "error", message: res.text, issue, report };
+    return { status: "error", message: res.text, failure, report };
   }
   const download = await saveOutput(res.output);
   if (!download.saved) return { status: "cancelled" };

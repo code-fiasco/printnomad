@@ -11,7 +11,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from . import i18n, issues, read_3mf, write_3mf
+from . import error_codes, i18n, read_3mf, write_3mf
 from . import options as conversion_options
 from .convert import convert
 from .profiles import ProfileError, ProfileLibrary
@@ -32,7 +32,7 @@ def source_info(src: str) -> dict:
 
 
 def list_options(lang: str | None = None) -> list[dict]:
-    """Advanced options with texts in `lang` (for the settings screens)."""
+    """Conversion options with texts in `lang` (for the settings screens)."""
     if lang:
         i18n.set_language(lang)
     return conversion_options.describe()
@@ -82,7 +82,7 @@ def convert_file(
     Returns {"ok", "output", "already_target", "report", "text"}; `output`
     is the path of the converted project or None (also when the project is already set up
     for that printer and needs no fix: `already_target`; one that needs fixes is written
-    repaired, see repair.py). `options` are the advanced options (see
+    reviewed, see review.py). `options` are the conversion options (see
     options.py; missing ones take their defaults). Errors in the input (unknown
     printer or bad option) come back in the report instead of raising.
     `source_bundles`: profiles of the slicer the project comes from (see source_info),
@@ -94,11 +94,11 @@ def convert_file(
     try:
         project = read_3mf.load(src)
     except read_3mf.UNREADABLE_ERRORS as e:
-        return _failed(src, printer, issues.UNREADABLE_PROJECT, i18n.t("convert.error.unreadable", detail=e))
+        return _failed(src, printer, error_codes.UNREADABLE_PROJECT, i18n.t("convert.error.unreadable", detail=e))
     try:
         chosen = conversion_options.resolve(options)
     except conversion_options.OptionError as e:
-        return _failed(src, printer, issues.BAD_OPTION, str(e))
+        return _failed(src, printer, error_codes.BAD_OPTION, str(e))
     try:
         lib = ProfileLibrary.from_bundles(bundles)
         name = find_printer(lib, printer)
@@ -107,7 +107,7 @@ def convert_file(
         known = registry(platform=platform) if slicer else {}
         target = Target(lib, name, known.get(slicer))
     except ProfileError as e:
-        return _failed(src, printer, issues.UNKNOWN_PRINTER, str(e))
+        return _failed(src, printer, error_codes.UNKNOWN_PRINTER, str(e))
     source_lib = None
     if source_bundles:
         try:
@@ -117,10 +117,10 @@ def convert_file(
     try:
         result = convert(project, target, nozzle=nozzle, source_lib=source_lib, bed_type=bed_type, **chosen)
     except ET.ParseError as e:
-        return _failed(src, printer, issues.UNREADABLE_PROJECT, i18n.t("convert.error.unreadable", detail=e))
+        return _failed(src, printer, error_codes.UNREADABLE_PROJECT, i18n.t("convert.error.unreadable", detail=e))
     except Exception as e:  # noqa: BLE001 (last resort: the user gets a code and a report to send)
         detail = f"{type(e).__name__}: {e}"
-        return _failed(src, printer, issues.INTERNAL, i18n.t("convert.error.internal", detail=detail))
+        return _failed(src, printer, error_codes.INTERNAL, i18n.t("convert.error.internal", detail=detail))
     report = result.report
     if report.already_target and not result.files:
         # Not an error when converting for several printers: this one needs nothing.
@@ -131,11 +131,11 @@ def convert_file(
         try:
             write_3mf.write(project, dest, result.files, result.removed, force=True)
         except write_3mf.WriteError as e:
-            report.fail(issues.WRITE_FAILED, str(e))
+            report.fail(error_codes.WRITE_FAILED, str(e))
         else:
             report.output = str(dest)
             for problem in write_3mf.verify(project, dest, result.files):
-                report.fail(issues.VERIFY_FAILED, problem)
+                report.fail(error_codes.VERIFY_FAILED, problem)
     output = report.output or None
     # Paths in the embedder's virtual file system mean nothing to the user: names only.
     report.source = Path(src).name

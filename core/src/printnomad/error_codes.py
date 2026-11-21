@@ -1,7 +1,7 @@
 """Error codes: what failed, at which stage of the conversion, and what the user can do.
 
 A code never changes meaning once released, so reports and bug tickets stay comparable.
-Texts live in the catalogs: `issue.<code>.suggestion` and `stage.<stage>`.
+Texts live in the catalogs: `error.<code>.suggestion` and `stage.<stage>`.
 """
 
 from __future__ import annotations

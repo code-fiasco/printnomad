@@ -11,7 +11,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import i18n, issues, read_3mf, rules, write_3mf
+from . import error_codes, i18n, read_3mf, rules, write_3mf
 from .convert import convert
 from .i18n import t
 from .profiles import USER_VENDOR, ProfileError
@@ -20,6 +20,11 @@ from .slicers import installed_slicers, registry, source_library
 from .target import Target, load_target
 
 EXIT_OK, EXIT_ERROR = 0, 1
+
+
+def _assignment_mode(value: str) -> str:
+    """`slicer` is the former name of `by_slicer`."""
+    return rules.ASSIGNMENT_BY_SLICER if value == "slicer" else value
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -36,8 +41,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--force", action="store_true", help=t("cli.help.force"))
     p.add_argument("--no-designer-filament", action="store_true", help=t("cli.help.no_designer_filament"))
     p.add_argument("--designer-cooling", action="store_true", help=t("cli.help.designer_cooling"))
-    p.add_argument("--map-mode", choices=rules.MAP_MODES, default=rules.MAP_COMPATIBLE,
-                   help=t("cli.help.map_mode", modes=", ".join(rules.MAP_MODES)))
+    p.add_argument("--assignment-mode", type=_assignment_mode, choices=rules.ASSIGNMENT_MODES,
+                   default=rules.ASSIGNMENT_COMPATIBLE,
+                   help=t("cli.help.assignment_mode", modes=", ".join(rules.ASSIGNMENT_MODES)))
+    # Former name of --assignment-mode, kept so existing scripts keep working.
+    p.add_argument("--map-mode", dest="assignment_mode", type=_assignment_mode, choices=rules.ASSIGNMENT_MODES,
+                   default=argparse.SUPPRESS, help=argparse.SUPPRESS)
     p.add_argument("-v", "--verbose", action="store_true", help=t("cli.help.verbose"))
     p.add_argument("--lang", help=t("cli.help.lang", languages=", ".join(i18n.available_languages())))
     return p
@@ -136,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
     result = convert(project, target, nozzle=args.nozzle, user_map=user_map, bed_type=args.bed_type,
                      source_lib=source_library(read_3mf.detect_source(project)),
                      keep_designer_filament=not args.no_designer_filament,
-                     keep_designer_cooling=args.designer_cooling, map_mode=args.map_mode)
+                     keep_designer_cooling=args.designer_cooling, assignment_mode=args.assignment_mode)
     report = result.report
 
     dest = write_3mf.output_path(src, target.output_suffix)
@@ -145,18 +154,18 @@ def main(argv: list[str] | None = None) -> int:
     report_path = args.report or dest.with_suffix(".report.json")
 
     if report.ok and dest.exists() and not args.force:
-        report.fail(issues.WRITE_FAILED, t("cli.error.exists", path=dest))
+        report.fail(error_codes.WRITE_FAILED, t("cli.error.exists", path=dest))
     if report.ok:
         try:
             write_3mf.write(project, dest, result.files, result.removed, force=args.force)
         except write_3mf.WriteError as e:
-            report.fail(issues.WRITE_FAILED, str(e))
+            report.fail(error_codes.WRITE_FAILED, str(e))
         else:
             report.output = str(dest)
             for problem in write_3mf.verify(project, dest, result.files):
-                report.fail(issues.VERIFY_FAILED, problem)
+                report.fail(error_codes.VERIFY_FAILED, problem)
     if write_3mf.sha256_file(src) != before:
-        report.fail(issues.VERIFY_FAILED, t("cli.error.original_changed"))
+        report.fail(error_codes.VERIFY_FAILED, t("cli.error.original_changed"))
 
     report_path.write_text(report.to_json(), encoding="utf-8")
     print(report.to_text(verbose=args.verbose))

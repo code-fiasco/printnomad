@@ -1,7 +1,7 @@
 """Conversion options shared by the CLI, the OrcaSlicer plugin and the browser extension.
 
 Options are data so every front end offers the same choices, defaults and texts.
-Basic mode shows nothing (defaults apply); advanced mode shows every option here.
+Every option applies whether or not the user changed it; untouched ones take their defaults.
 Keys are the keyword arguments of `convert.convert()`; texts are i18n messages
 `option.<key>.label`, `.help`, `.<choice>` and, when the chosen value deserves it,
 `.warning`.
@@ -32,7 +32,7 @@ class Option:
 
 
 OPTIONS: tuple[Option, ...] = (
-    Option("map_mode", rules.MAP_COMPATIBLE, rules.MAP_MODES, warn_when=rules.MAP_EXACT),
+    Option("assignment_mode", rules.ASSIGNMENT_COMPATIBLE, rules.ASSIGNMENT_MODES, warn_when=rules.ASSIGNMENT_EXACT),
     Option("keep_designer_filament", True),
     Option("keep_designer_cooling", False, warn_when=True),
     Option("keep_designer_printer_settings", False, warn_when=True),

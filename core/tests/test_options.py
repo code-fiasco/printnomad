@@ -12,7 +12,7 @@ def test_defaults_match_convert_signature():
     params = inspect.signature(convert).parameters
     for key, value in options.defaults().items():
         assert params[key].default == value, key
-    assert options.defaults()["map_mode"] == rules.MAP_COMPATIBLE
+    assert options.defaults()["assignment_mode"] == rules.ASSIGNMENT_COMPATIBLE
     assert options.defaults()["keep_designer_cooling"] is False
 
 
@@ -21,7 +21,7 @@ def test_resolve_validates():
     with pytest.raises(options.OptionError):
         options.resolve({"nope": 1})
     with pytest.raises(options.OptionError):
-        options.resolve({"map_mode": "sideways"})
+        options.resolve({"assignment_mode": "sideways"})
     with pytest.raises(options.OptionError):
         options.resolve({"keep_designer_cooling": "yes"})
 

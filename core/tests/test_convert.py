@@ -357,7 +357,8 @@ def test_author_process_override_kept_and_limits_warned(lib, tmp_path):
 
 def test_filament_profiles_and_author_filament_overrides_reported(lib, tmp_path):
     _, result, s = run(lib, make_bambu_3mf(tmp_path / "a.3mf", [PLA, PLA_MATTE, PETG], [["2"]],
-                                           object_extruders={"2": 3}, paint=(1, 2)), map_mode=rules.MAP_BY_SLICER)
+                                           object_extruders={"2": 3}, paint=(1, 2)),
+                         assignment_mode=rules.ASSIGNMENT_BY_SLICER)
     assert s["filament_settings_id"] == [
         "Flashforge PLA Basic @FF C5P", "Flashforge PLA Matte @FF C5P", "Flashforge PETG Basic @FF C5P"]
     assert s["filament_max_volumetric_speed"] == ["18", "18", "18"]
@@ -419,8 +420,8 @@ def test_more_than_four_filaments(lib, tmp_path):
     # More colours than extruders: everything is kept, automatic (even if "exact" is chosen),
     # and the user is told to resolve it in the slicer.
     painted = make_bambu_3mf(tmp_path / "b.3mf", fil, [["2"]], paint=(1, 2, 3, 4, 5))
-    for mode in (rules.MAP_COMPATIBLE, rules.MAP_EXACT):
-        _, result, s = run(lib, painted, map_mode=mode)
+    for mode in (rules.ASSIGNMENT_COMPATIBLE, rules.ASSIGNMENT_EXACT):
+        _, result, s = run(lib, painted, assignment_mode=mode)
         assert result.report.ok and result.report.over_extruders == ["1"]
         assert len(s["filament_colour"]) == 5 and s["filament_map_mode"] == rules.MAP_MODE_AUTO
         assert any("5" in w for w in result.report.warnings)
@@ -552,7 +553,7 @@ def test_bambu_only_key_kept_when_target_defines_it(lib, tmp_path, profiles_root
 def test_manual_extruder_map_kept_when_slicer_has_no_limit(lib, tmp_path):
     """Flash Studio respeta la asignación manual en E3/E4: sin la particularidad de Orca, se queda manual."""
     _, result, s = run(lib, make_bambu_3mf(tmp_path / "a.3mf", [PLA, PLA_MATTE, PETG], [["2"]], paint=(2, 3)),
-                       slicer=None, map_mode=rules.MAP_BY_SLICER)
+                       slicer=None, assignment_mode=rules.ASSIGNMENT_BY_SLICER)
     assert s["filament_map_mode"] == "Manual" and s["filament_map"] == ["1", "2", "3"]
     assert not any("modo automático" in w for w in result.report.warnings)
 
@@ -610,13 +611,13 @@ def test_map_mode_compatible_by_default_and_exact_on_request(lib, tmp_path):
     _, result, s = run(lib, path)
     assert s["filament_map_mode"] == "Auto For Flush" and s["filament_map"] == ["1", "2", "3"]
     assert any("cualquier laminador" in n for n in result.report.notes)
-    _, result, s = run(lib, path, map_mode=rules.MAP_EXACT)
+    _, result, s = run(lib, path, assignment_mode=rules.ASSIGNMENT_EXACT)
     assert s["filament_map_mode"] == "Manual"
     assert any("OrcaSlicer 2.5 lo rechaza" in w for w in result.report.warnings)
     _, result, s = run(lib, path, user_map={1: 1, 2: 2, 3: 3})
     assert s["filament_map_mode"] == "Manual"  # elegida a mano: siempre se impone
     with pytest.raises(ValueError):
-        run(lib, path, map_mode="nope")
+        run(lib, path, assignment_mode="nope")
 
 
 def test_designer_cooling_kept_on_request_with_warning(lib, tmp_path):
